@@ -12,7 +12,7 @@ target 'MVVM_Login' do
     inherit! :search_paths
     # Pods for testing
     
-    pod 'OCMockito', '~> 5.0'
+    pod 'OCMock', '~> 3.4'
     pod 'Expecta', '~> 1.0'
   end
 

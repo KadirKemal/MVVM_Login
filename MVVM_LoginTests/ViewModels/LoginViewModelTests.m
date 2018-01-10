@@ -10,12 +10,15 @@
 #import "LoginViewModel.h"
 #import "ValidationHelper.h"
 #import "MembershipService.h"
+#import "UserModel.h"
 
 #import <Expecta/Expecta.h>
-#import <OCHamcrest/OCHamcrest.h>
-#import <OCMockito/OCMockito.h>
+#import <OCMock/OCMock.h>
+
 
 @interface LoginViewModelTests : XCTestCase
+
+@property LoginViewModel *loginViewModel;
 
 @end
 
@@ -34,8 +37,8 @@
 - (void)testControlAuthenticationWithInvalidEmail{
     [Expecta setAsynchronousTestTimeout:1]; // default is 1 sec
     
-    ValidationHelper *mockValidationHelper = mock([ValidationHelper class]);
-    [given([mockValidationHelper isValidEmail:anything()]) willReturnBool:NO];
+    ValidationHelper *mockValidationHelper = OCMClassMock([ValidationHelper class]);
+    OCMStub([mockValidationHelper isValidEmail:[OCMArg any]]).andReturn(NO);
     
     LoginViewModel *loginViewModel = [[LoginViewModel alloc] initWithMembershipService:nil];
     loginViewModel.validationHelper = mockValidationHelper;
@@ -49,6 +52,79 @@
     expect(r.isSuccess).will.beFalsy();
     expect(r.errorMessage).willNot.beNil();
     expect(r.result).will.beNil();
+}
+
+- (void)testControlAuthenticationWithValidEmailAndInvalidPassword{
+    ValidationHelper *mockValidationHelper = OCMClassMock([ValidationHelper class]);
+    OCMStub([mockValidationHelper isValidEmail:[OCMArg any]]).andReturn(YES);
+    OCMStub([mockValidationHelper isValidPassword:[OCMArg any]]).andReturn(PasswordValidationStatusShort);
+    
+    LoginViewModel *loginViewModel = [[LoginViewModel alloc] initWithMembershipService:nil];
+    loginViewModel.validationHelper = mockValidationHelper;
+    
+    __block SignalResult *r = nil;
+    [[loginViewModel controlAuthentication:@"" password:@""] subscribeNext:^(SignalResult *x) {
+        r = x;
+    }];
+    
+    expect(r).willNot.beNil();
+    expect(r.isSuccess).will.beFalsy();
+    expect(r.errorMessage).willNot.beNil();
+    expect(r.result).will.beNil();
+}
+
+- (void)testControlAuthenticationWithIncorrectEmailOrPassword{
+    NSString *someMessage = @"Some Message";
+    
+    ValidationHelper *mockValidationHelper = OCMClassMock([ValidationHelper class]);
+    OCMStub([mockValidationHelper isValidEmail:[OCMArg any]]).andReturn(YES);
+    OCMStub([mockValidationHelper isValidPassword:[OCMArg any]]).andReturn(PasswordValidationStatusValid);
+    
+    MembershipService *mockMemService = OCMClassMock([MembershipService class]);
+    OCMStub([mockMemService controlAuthentication:[OCMArg any] password:[OCMArg any] success:[OCMArg any] fail:([OCMArg invokeBlockWithArgs:someMessage, nil])]);
+    
+    LoginViewModel *loginViewModel = [[LoginViewModel alloc] initWithMembershipService:mockMemService];
+    loginViewModel.validationHelper = mockValidationHelper;
+    
+    __block SignalResult *r = nil;
+    [[loginViewModel controlAuthentication:@"" password:@""] subscribeNext:^(SignalResult *x) {
+        r = x;
+    }];
+    
+    expect(r).willNot.beNil();
+    expect(r.isSuccess).will.beFalsy();
+    expect(r.errorMessage).willNot.beNil();
+    expect(r.errorMessage).will.equal(someMessage);
+    expect(r.result).will.beNil();
+}
+
+- (void)testControlAuthenticationWithCorrectEmailAndPassword{
+    NSInteger userId = 5;
+    UserModel *user = [UserModel new];
+    user.userId = userId;
+    
+    ValidationHelper *mockValidationHelper = OCMClassMock([ValidationHelper class]);
+    OCMStub([mockValidationHelper isValidEmail:[OCMArg any]]).andReturn(YES);
+    OCMStub([mockValidationHelper isValidPassword:[OCMArg any]]).andReturn(PasswordValidationStatusValid);
+    
+    MembershipService *mockMemService = OCMClassMock([MembershipService class]);
+    OCMStub([mockMemService controlAuthentication:[OCMArg any] password:[OCMArg any] success:([OCMArg invokeBlockWithArgs:user, nil]) fail:[OCMArg any]]);
+    
+    LoginViewModel *loginViewModel = [[LoginViewModel alloc] initWithMembershipService:mockMemService];
+    loginViewModel.validationHelper = mockValidationHelper;
+    
+    __block SignalResult *r = nil;
+    __block UserModel *returnUser = nil;
+    [[loginViewModel controlAuthentication:@"" password:@""] subscribeNext:^(SignalResult *x) {
+        r = x;
+        returnUser = (UserModel *) (r.result);
+    }];
+    
+    expect(r).willNot.beNil();
+    expect(r.isSuccess).will.beTruthy();
+    expect(r.errorMessage).will.beNil();
+    expect(r.result).willNot.beNil();
+    expect(returnUser.userId).will.equal(userId);
 }
 
 @end
