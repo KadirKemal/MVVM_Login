@@ -37,4 +37,20 @@
     // Use XCTAssert and related functions to verify your tests produce the correct results.
 }
 
+- (void)testInvalidEmail {
+    
+    XCUIApplication *app = [[XCUIApplication alloc] init];
+    XCUIElement *emailTextField = app.textFields[@"Email"];
+    [emailTextField tap];
+    [emailTextField typeText:@"kkdursun@yahoocom"];
+    
+    XCUIElement *passwordTextField = app.textFields[@"Password"];
+    [passwordTextField tap];
+    [passwordTextField typeText:@"123"];
+    [app.buttons[@"Log In"] tap];
+    
+    // Use recording to get started writing UI tests.
+    // Use XCTAssert and related functions to verify your tests produce the correct results.
+}
+
 @end

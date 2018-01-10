@@ -14,4 +14,6 @@
 @property (nonatomic, copy) NSString* firstName;
 @property (nonatomic, copy) NSString* lastName;
 
+@property (nonatomic, readonly) NSString* fullname;
+
 @end

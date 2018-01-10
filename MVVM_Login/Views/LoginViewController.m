@@ -12,6 +12,7 @@
 
 @property (weak, nonatomic) IBOutlet UITextField *emailTextField;
 @property (weak, nonatomic) IBOutlet UITextField *passwordTextField;
+@property (weak, nonatomic) IBOutlet UILabel *resultLabel;
 
 @end
 
@@ -36,11 +37,11 @@
 }
 
 -(void) onDidSuccessLogin:(UserModel *) userModel{
-    
+    _resultLabel.text = userModel.fullname;
 }
 
 -(void) onDidFailLogin:(NSString *) message{
-    
+    _resultLabel.text = message;
 }
 
 

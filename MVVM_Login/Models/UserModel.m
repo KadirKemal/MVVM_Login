@@ -10,4 +10,8 @@
 
 @implementation UserModel
 
+-(NSString *)fullname{
+    return [NSString stringWithFormat:@"%@ %@", self.firstName, self.lastName];
+}
+
 @end
