@@ -18,15 +18,33 @@
 
 @interface LoginViewModelTests : XCTestCase
 
-@property LoginViewModel *loginViewModel;
-
 @end
 
-@implementation LoginViewModelTests
+@implementation LoginViewModelTests{
+    ValidationHelper *mockValidationHelper;
+    
+    NSString *correctEmailAddress;
+    NSString *invalidEmailAddress;
+    NSString *correctPassword;
+    NSString *shortPassword;
+}
 
 - (void)setUp {
     [super setUp];
     // Put setup code here. This method is called before the invocation of each test method in the class.
+    
+    correctEmailAddress = @"kkdursun@yahoo.com";
+    invalidEmailAddress = @"abcdef";
+    
+    correctPassword = @"kasd!.123";
+    shortPassword = @"123456";
+    
+    mockValidationHelper = OCMClassMock([ValidationHelper class]);
+    OCMStub([mockValidationHelper isValidEmail:correctEmailAddress]).andReturn(YES);
+    OCMStub([mockValidationHelper isValidEmail:invalidEmailAddress]).andReturn(NO);
+    
+    OCMStub([mockValidationHelper isValidPassword:shortPassword]).andReturn(PasswordValidationStatusShort);
+    OCMStub([mockValidationHelper isValidPassword:correctPassword]).andReturn(PasswordValidationStatusValid);
 }
 
 - (void)tearDown {
@@ -35,16 +53,16 @@
 }
 
 - (void)testControlAuthenticationWithInvalidEmail{
-    [Expecta setAsynchronousTestTimeout:1]; // default is 1 sec
-    
-    ValidationHelper *mockValidationHelper = OCMClassMock([ValidationHelper class]);
-    OCMStub([mockValidationHelper isValidEmail:[OCMArg any]]).andReturn(NO);
-    
+//    [Expecta setAsynchronousTestTimeout:1]; // default is 1 sec
+//
+//    ValidationHelper *mockValidationHelper = OCMClassMock([ValidationHelper class]);
+//    OCMStub([mockValidationHelper isValidEmail:[OCMArg any]]).andReturn(NO);
+
     LoginViewModel *loginViewModel = [[LoginViewModel alloc] initWithMembershipService:nil];
     loginViewModel.validationHelper = mockValidationHelper;
     
     __block SignalResult *r = nil;
-    [[loginViewModel controlAuthentication:@"" password:@""] subscribeNext:^(SignalResult *x) {
+    [[loginViewModel controlAuthentication:invalidEmailAddress password:correctPassword] subscribeNext:^(SignalResult *x) {
         r = x;
     }];
     
@@ -55,15 +73,15 @@
 }
 
 - (void)testControlAuthenticationWithValidEmailAndInvalidPassword{
-    ValidationHelper *mockValidationHelper = OCMClassMock([ValidationHelper class]);
-    OCMStub([mockValidationHelper isValidEmail:[OCMArg any]]).andReturn(YES);
-    OCMStub([mockValidationHelper isValidPassword:[OCMArg any]]).andReturn(PasswordValidationStatusShort);
+//    ValidationHelper *mockValidationHelper = OCMClassMock([ValidationHelper class]);
+//    OCMStub([mockValidationHelper isValidEmail:[OCMArg any]]).andReturn(YES);
+//    OCMStub([mockValidationHelper isValidPassword:[OCMArg any]]).andReturn(PasswordValidationStatusShort);
     
     LoginViewModel *loginViewModel = [[LoginViewModel alloc] initWithMembershipService:nil];
     loginViewModel.validationHelper = mockValidationHelper;
     
     __block SignalResult *r = nil;
-    [[loginViewModel controlAuthentication:@"" password:@""] subscribeNext:^(SignalResult *x) {
+    [[loginViewModel controlAuthentication:correctEmailAddress password:shortPassword] subscribeNext:^(SignalResult *x) {
         r = x;
     }];
     
@@ -76,9 +94,9 @@
 - (void)testControlAuthenticationWithIncorrectEmailOrPassword{
     NSString *someMessage = @"Some Message";
     
-    ValidationHelper *mockValidationHelper = OCMClassMock([ValidationHelper class]);
-    OCMStub([mockValidationHelper isValidEmail:[OCMArg any]]).andReturn(YES);
-    OCMStub([mockValidationHelper isValidPassword:[OCMArg any]]).andReturn(PasswordValidationStatusValid);
+//    ValidationHelper *mockValidationHelper = OCMClassMock([ValidationHelper class]);
+//    OCMStub([mockValidationHelper isValidEmail:[OCMArg any]]).andReturn(YES);
+//    OCMStub([mockValidationHelper isValidPassword:[OCMArg any]]).andReturn(PasswordValidationStatusValid);
     
     MembershipService *mockMemService = OCMClassMock([MembershipService class]);
     OCMStub([mockMemService controlAuthentication:[OCMArg any] password:[OCMArg any] success:[OCMArg any] fail:([OCMArg invokeBlockWithArgs:someMessage, nil])]);
@@ -87,7 +105,7 @@
     loginViewModel.validationHelper = mockValidationHelper;
     
     __block SignalResult *r = nil;
-    [[loginViewModel controlAuthentication:@"" password:@""] subscribeNext:^(SignalResult *x) {
+    [[loginViewModel controlAuthentication:correctEmailAddress password:correctPassword] subscribeNext:^(SignalResult *x) {
         r = x;
     }];
     
@@ -115,7 +133,7 @@
     
     __block SignalResult *r = nil;
     __block UserModel *returnUser = nil;
-    [[loginViewModel controlAuthentication:@"" password:@""] subscribeNext:^(SignalResult *x) {
+    [[loginViewModel controlAuthentication:correctEmailAddress password:correctPassword] subscribeNext:^(SignalResult *x) {
         r = x;
         returnUser = (UserModel *) (r.result);
     }];
